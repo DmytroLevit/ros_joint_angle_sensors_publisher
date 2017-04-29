@@ -10,7 +10,7 @@ import can
 can.rc['interface'] = 'socketcan_native'
 can.rc['channel'] = 'can0'
 
-idMap = {"Bottom0" : 0x50, "Top0" : 0x51, "Bottom1" : 0x52, "Top1" : 0x53}
+idMap = {"Bottom0" : 0x50, "Top0" : 0x51, "Bottom1" : 0x53, "Top1" : 0x52}
 
 ##
 # expect following data
