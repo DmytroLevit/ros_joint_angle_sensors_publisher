@@ -12,28 +12,37 @@ can.rc['channel'] = 'can0'
 
 idMap = {"Bottom0" : 0x50, "Top0" : 0x51, "Bottom1" : 0x53, "Top1" : 0x52}
 
+
+def receiveByteAsInt(serialPort):
+    try:
+        data = serialPort.read()
+        while len(data) == 0:
+            data = serialPort.read()
+        return ord(data)
+    except serial.SerialException:
+        print("Serial port " + serialPort.name + " seems to be closed. I will not try to recover it and exit immediately")
+        sys.exit(-1)
+
+
 ##
 # expect following data
 # 0xFF, 0xFF - data header
 # 0xXX - CAN ID
 # 0xXX, 0xXX - 12b angle
-def receiveDataSerial(serialPort, rospy):
-    try:
-        data = int(serialPort.read())
-        if data == 255:
-            data = int(serialPort.read())
-            if data == 255:
-                channelId = int(serialPort.read())
-                data = int(serialPort.read())
-                angle = data << 8
-                data = int(serialPort.read())
-                angle += data
-                print("Received channelId " + str(channelId) + "; data = " + str(data))
-                return (channelId, angle)
+def receiveDataSerial(serialPort):
+    data = receiveByteAsInt(serialPort)
+    if data == 0xFF:
+        data = receiveByteAsInt(serialPort)
+        if data == 0xFF:
+            channelID = receiveByteAsInt(serialPort)
+            data = receiveByteAsInt(serialPort)
+            angle = data
+            data = receiveByteAsInt(serialPort)
+            angle += data << 8
+            return (channelID, angle)
 
-        return (-1, -1)
-    except:
-        return (-1, -1)
+    # error return value
+    return (-1, -1)
 
 def receiveDataCAN(canBus):
     message = canBus.recv()
@@ -53,7 +62,7 @@ def publisher(serialPort, canBus, useSerial):
     jasmsg = jas()
     while not rospy.is_shutdown():
         if useSerial == True:
-            jasData = receiveDataSerial(serialPort, rospy)
+            jasData = receiveDataSerial(serialPort)
         else:
             jasData = receiveDataCAN(canBus)
 
